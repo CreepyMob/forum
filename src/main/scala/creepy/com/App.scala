@@ -6,9 +6,9 @@ import akka.http.scaladsl.server.Route
 import akka.stream.ActorMaterializer
 import cats.effect.{ExitCode, IO, IOApp}
 import cats.syntax.functor._
-import creepy.com.api.{DateProvider, ForumApiHelloWorld}
+import creepy.com.api.{DateProvider, ForumApiImpl}
 import creepy.com.db.Database
-import creepy.com.db.dao.{MessageDaoImpl, TopicDaoImpl}
+import creepy.com.db.dao.{MessageDao, TopicDao}
 import creepy.com.http.ForumRoute
 
 
@@ -33,10 +33,10 @@ object App extends IOApp {
       exitCode <- Database.transactor(config).use { xa =>
         for {
           _ <- Database.initialize(xa)
-          topicDao = new TopicDaoImpl(xa)
-          messageDao = new MessageDaoImpl(xa)
+          topicDao = new TopicDao()
+          messageDao = new MessageDao()
           dateProvider = new DateProvider()
-          forumApi <- IO.pure(new ForumApiHelloWorld(topicDao, messageDao, dateProvider, xa))
+          forumApi <- IO.pure(new ForumApiImpl(topicDao, messageDao, dateProvider, xa))
           forumHttp <- IO.pure(new ForumRoute(forumApi))
           route1 <- IO.pure(forumHttp())
           _ <- runServer(route1)

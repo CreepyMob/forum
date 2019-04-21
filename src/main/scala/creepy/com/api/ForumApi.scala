@@ -29,7 +29,7 @@ trait ForumApi[F[_]] {
 
 }
 
-class ForumApiHelloWorld(topicDao: TopicDao, messageDao: MessageDao, dateProvider: DateProvider, xa: Transactor[IO]) extends ForumApi[IO] {
+class ForumApiImpl(topicDao: TopicDao, messageDao: MessageDao, dateProvider: DateProvider, xa: Transactor[IO]) extends ForumApi[IO] {
   override def createTopic(initiatorToken: String, createTopic: CreateTopic): IO[Unit] = (for {
     date <- dateProvider.apply[ConnectionIO]
     topic <- topicDao.createTopic(0, createTopic)
@@ -47,7 +47,6 @@ class ForumApiHelloWorld(topicDao: TopicDao, messageDao: MessageDao, dateProvide
     eitherTopic <- topicDao.getTopic(topicId)
     topic <- eitherTopic.liftTo[ConnectionIO]
     _ <- messageDao.addMessage(0, topic.id, date, message)
-    // _ <- postMessageTransaction(topicId, date, message).transact[IO](xa)
   } yield ()).transact[IO](xa)
 
   override def updateMessage(initiatorToken: String, messageId: Long, updatedMessage: UpdateMessage): IO[Unit] = messageDao.updateMessage(messageId, updatedMessage).transact[IO](xa).void

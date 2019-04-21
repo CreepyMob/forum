@@ -6,7 +6,6 @@ trait TokenDao {
 
   def getUserId(token: String): ConnectionIO[Long]
 
-  def getUserOptionalId(token: String): ConnectionIO[Option[Long]]
 }
 
 

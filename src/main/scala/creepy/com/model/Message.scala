@@ -13,8 +13,6 @@ case class Message(id: Long,
                    date: Timestamp)
 
 
-case class NoSuchMessageException(messageId: Long) extends IllegalStateException(s"Not found message with id: $messageId")
-
 case class OnlyMessageOwnerCanUpdateMessageException(userId: Long, messageId: Long) extends IllegalStateException(s"User with id: $userId not owner of message with id: $messageId")
 
 case class OnlyMessageOwnerCanDeleteMessageException(userId: Long, messageId: Long) extends IllegalStateException(s"User with id: $userId not owner of message with id: $messageId")
