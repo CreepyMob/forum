@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ScalaCompilerConfiguration">
+    <profile name="sbt 1" modules="forum">
+      <option name="experimental" value="true" />
+      <option name="deprecationWarnings" value="true" />
+      <option name="uncheckedWarnings" value="true" />
+      <option name="featureWarnings" value="true" />
+      <parameters>
+        <parameter value="-encoding" />
+        <parameter value="utf8" />
+        <parameter value="-target:jvm-1.8" />
+        <parameter value="-Ypartial-unification" />
+        <parameter value="-language:_" />
+      </parameters>
+      <plugins>
+        <plugin path="C:\Users\creep\.ivy2\cache\org.scalameta\paradise_2.12.8\jars\paradise_2.12.8-3.0.0-M11.jar" />
+      </plugins>
+    </profile>
+  </component>
+</project>
