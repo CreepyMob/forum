@@ -10,6 +10,7 @@ import creepy.com.api.{DateProvider, ForumApiImpl}
 import creepy.com.db.Database
 import creepy.com.db.dao.{MessageDao, TopicDao}
 import creepy.com.http.ForumRoute
+import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 
 
 object App extends IOApp {
@@ -24,22 +25,20 @@ object App extends IOApp {
       .flatMap(s => IO(println(s)))
       .void
 
-  def log[T](title: String, value: T) = IO.pure(println(s"$title log: $value"))
-
   override def run(args: List[String]): IO[ExitCode] =
 
     for {
       config <- Config.load()
       exitCode <- Database.transactor(config).use { xa =>
         for {
+          logger <- Slf4jLogger.create[IO]
           _ <- Database.initialize(xa)
           topicDao = new TopicDao()
           messageDao = new MessageDao()
           dateProvider = new DateProvider()
-          forumApi <- IO.pure(new ForumApiImpl(topicDao, messageDao, dateProvider, xa))
-          forumHttp <- IO.pure(new ForumRoute(forumApi))
-          route1 <- IO.pure(forumHttp())
-          _ <- runServer(route1)
+          forumApi = new ForumApiImpl(topicDao, messageDao, dateProvider, xa, logger)
+          forumHttp = new ForumRoute(forumApi, logger)
+          _ <- runServer(forumHttp())
           _ <- IO.never
         } yield ExitCode.Success
       }

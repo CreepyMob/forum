@@ -9,8 +9,10 @@ import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import cats.effect.IO
+import io.chrisdavenport.log4cats.Logger
 import io.circe.syntax.EncoderOps
 import io.circe.{Encoder, _}
+import cats.implicits._
 
 package object http {
 
@@ -20,9 +22,13 @@ package object http {
     indent = ""
   )
 
-  implicit def toResponseMarshaller[A: Encoder]: ToEntityMarshaller[IO[A]] =
+  implicit def toResponseMarshaller[A: Encoder](implicit logger: Logger[IO]): ToEntityMarshaller[IO[A]] =
     Marshaller.withFixedContentType(`application/json`) { ia: IO[A] =>
-      HttpEntity(`application/json`, Source.fromFuture(ia.map(a => ByteString(noSpaceDropNullValuesPrinter.pretty(a.asJson))).unsafeToFuture()))
+      HttpEntity(`application/json`, Source.fromFuture(
+        ia.map(a => ByteString(noSpaceDropNullValuesPrinter.pretty(a.asJson)))
+          .handleErrorWith(t => logger.error(t)("response end with exception") *> IO.raiseError(t))
+          .unsafeToFuture())
+      )
     }
 
   private val jsonStringUnmarshaller =

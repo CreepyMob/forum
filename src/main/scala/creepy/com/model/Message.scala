@@ -2,6 +2,7 @@ package creepy.com.model
 
 import java.sql.Timestamp
 
+import creepy.com.TimestampAdapter._
 import io.circe.generic.JsonCodec
 
 @JsonCodec

@@ -8,6 +8,7 @@ import creepy.com.model._
 import doobie.free.connection.ConnectionIO
 import doobie.implicits._
 import doobie.util.transactor.Transactor
+import io.chrisdavenport.log4cats.Logger
 
 trait ForumApi[F[_]] {
 
@@ -29,7 +30,11 @@ trait ForumApi[F[_]] {
 
 }
 
-class ForumApiImpl(topicDao: TopicDao, messageDao: MessageDao, dateProvider: DateProvider, xa: Transactor[IO]) extends ForumApi[IO] {
+class ForumApiImpl(topicDao: TopicDao,
+                   messageDao: MessageDao,
+                   dateProvider: DateProvider,
+                   xa: Transactor[IO],
+                   logger: Logger[IO]) extends ForumApi[IO] {
   override def createTopic(initiatorToken: String, createTopic: CreateTopic): IO[Unit] = (for {
     date <- dateProvider.apply[ConnectionIO]
     topic <- topicDao.createTopic(0, createTopic)

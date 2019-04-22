@@ -4,8 +4,9 @@ import akka.http.scaladsl.server.Directives.{complete, get, path, pathPrefix, _}
 import akka.http.scaladsl.server.Route
 import cats.effect.IO
 import creepy.com.api.ForumApi
+import io.chrisdavenport.log4cats.Logger
 
-class ForumRoute(forumApi: ForumApi[IO]) {
+class ForumRoute(forumApi: ForumApi[IO], implicit val logger: Logger[IO]) {
 
   def getAllTopics: Route = (get & path("all")) {
     complete(forumApi.allTopics())
