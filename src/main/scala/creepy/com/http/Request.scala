@@ -17,3 +17,9 @@ case class CreateTopic(title: String,
 @JsonCodec
 case class UpdateTopic(title: String,
                        description: Option[String] = None)
+
+@JsonCodec
+case class CreateUser(nick: String, email: String, password: String)
+
+@JsonCodec
+case class LogInUser(nickOrEmail: String, password: String)

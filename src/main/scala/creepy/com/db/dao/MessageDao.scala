@@ -34,7 +34,7 @@ class MessageDao {
 
   def updateMessage(messageId: Long, updatedMessage: UpdateMessage): ConnectionIO[Unit] =
     sql"""UPDATE message SET
-         |body = ${updatedMessage.body}
+       body = ${updatedMessage.body}
        WHERE id =  $messageId
        """.stripMargin
       .update

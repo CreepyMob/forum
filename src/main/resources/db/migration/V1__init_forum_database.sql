@@ -1,32 +1,39 @@
-CREATE TABLE users (
-  id SERIAL PRIMARY KEY NOT NULL,
-  nick TEXT NOT NULL
+create table users (
+  id serial primary key not null,
+  nick text not null unique,
+  email text not null unique,
+  password text not null
 );
 
-INSERT INTO  users  (id, nick) VALUES (0, 'Anonymous');
-
-CREATE TABLE session_token (
-  id SERIAL PRIMARY KEY NOT NULL,
-   token TEXT NOT NULL,
-   user_id INT NOT NULL,
-   FOREIGN KEY (user_id) REFERENCES users (id)
+insert into users (nick, email, password) values (
+  'anonymous',
+  'anonymous@mail.com',
+  crypt('anonymous', gen_salt('bf'))
 );
 
-CREATE TABLE topic (
-  id SERIAL PRIMARY KEY NOT NULL,
-  owner_id INT NOT NULL,
-  title TEXT NOT NULL,
-  description TEXT,
-  FOREIGN KEY (owner_id) REFERENCES users (id)
+create table session_token (
+  id serial primary key not null,
+   token text not null unique,
+   user_id int not null,
+   last_update_time timestamp not null,
+   foreign key (user_id) references users (id)
 );
 
-CREATE TABLE message (
-  id SERIAL PRIMARY KEY  NOT NULL,
-  owner_id INT  NOT NULL,
-  topic_id INT NOT NULL,
-  forward_id INT,
-  body TEXT  NOT NULL,
-  message_date TIMESTAMP NOT NULL,
- FOREIGN KEY (owner_id) REFERENCES users (id),
- FOREIGN KEY (topic_id) REFERENCES topic (id)
+create table topic (
+  id serial primary key not null,
+  owner_id int not null,
+  title text not null,
+  description text,
+  foreign key (owner_id) references users (id)
+);
+
+create table message (
+  id serial primary key  not null,
+  owner_id int  not null,
+  topic_id int not null,
+  forward_id int,
+  body text  not null,
+  message_date timestamp not null,
+ foreign key (owner_id) references users (id),
+ foreign key (topic_id) references topic (id)
 );

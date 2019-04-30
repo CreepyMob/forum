@@ -3,10 +3,9 @@ package creepy.com.api
 import java.sql.Timestamp
 import java.util.Date
 
-import cats.Applicative
-import cats.syntax.applicative._
+import cats.effect.Sync
 
 class DateProvider {
 
-  def apply[F[_] : Applicative]: F[Timestamp] = new Timestamp(new Date().getTime).pure
+  def apply[F[_] : Sync]: F[Timestamp] = Sync[F].delay(new Timestamp(new Date().getTime))
 }
