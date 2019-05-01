@@ -18,9 +18,9 @@ trait ForumApi[F[_]] {
 
   def updateTopic(initiatorToken: String, topicId: Long, updateTopic: UpdateTopic): F[Unit]
 
-  def allTopics(): F[List[Topic]]
+  def allTopics(offset: Int, limit: Int): F[List[Topic]]
 
-  def allMessage(topicId: Long): F[List[Message]]
+  def allMessage(topicId: Long, offset: Int, limit: Int): F[List[Message]]
 
   def postMessage(initiatorToken: String, topicId: Long, message: CreateMessage): F[Unit]
 
@@ -49,12 +49,6 @@ class ForumApiImpl(sessionApi: SessionApi[IO],
     _ <- messageDao.addMessage(ownerId, topic.id, date, createTopic.initialMessage)
   } yield ()
 
-  //  def conditionOrError[F[_] : MonadError[?[_], Throwable]](condition: => Boolean, error: => IllegalStateException): F[Unit] = if (condition) {
-  //    Applicative[F].pure(Unit)
-  //  } else {
-  //    error.raiseError[F, Unit]
-  //  }
-
   override def removeTopic(initiatorToken: String, topicId: Long): IO[Unit] = for {
     userId <- sessionApi.getUserIdForToken(initiatorToken)
     _ <- removeTopicTransaction(userId, topicId).transact[IO](xa)
@@ -77,7 +71,7 @@ class ForumApiImpl(sessionApi: SessionApi[IO],
     _ <- topicDao.updateTopic(topicId, updateTopic)
   } yield ()
 
-  override def allTopics(): IO[List[Topic]] = topicDao.allTopics.transact[IO](xa)
+  override def allTopics(offset: Int, limit: Int): IO[List[Topic]] = topicDao.allTopics(offset, limit).transact[IO](xa)
 
   override def postMessage(initiatorToken: String, topicId: Long, message: CreateMessage): IO[Unit] = for {
     initiatorId <- sessionApi.getUserIdForToken(initiatorToken)
@@ -113,7 +107,7 @@ class ForumApiImpl(sessionApi: SessionApi[IO],
     _ <- messageDao.removeMessage(messageId)
   } yield ()
 
-  override def allMessage(topicId: Long): IO[List[Message]] = messageDao.allMessage(topicId).transact[IO](xa)
+  override def allMessage(topicId: Long, offset: Int, limit: Int): IO[List[Message]] = messageDao.allMessage(topicId, offset, limit).transact[IO](xa)
 }
 
 case class OnlyTopicOwnerCanUpdateTopic(initiatorId: Long, topicId: Long) extends IllegalStateException(s"Current user: $initiatorId not owner of topic: $topicId and can't update it")

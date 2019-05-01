@@ -3,14 +3,12 @@ package creepy.com.http
 import akka.http.scaladsl.model.headers._
 import akka.http.scaladsl.server.Directives.{AuthenticationResult, complete, cookie, get, path, pathPrefix, _}
 import akka.http.scaladsl.server.directives.AuthenticationResult
-import akka.http.scaladsl.server.{Directive1, Route}
+import akka.http.scaladsl.server.{Directive, Directive1, Route}
 import cats.effect.IO
 import creepy.com.api.{AuthApi, ForumApi}
 import io.chrisdavenport.log4cats.Logger
 
 import scala.concurrent.Future
-
-
 
 
 class ForumRoute(authApiIO: AuthApi[IO], forumApi: ForumApi[IO], implicit val logger: Logger[IO]) {
@@ -21,8 +19,8 @@ class ForumRoute(authApiIO: AuthApi[IO], forumApi: ForumApi[IO], implicit val lo
     complete(forumApi.createTopic(token, topic))
   }
 
-  def getAllTopics: Route = (get & path("all")) {
-    complete(forumApi.allTopics())
+  def getAllTopics: Route = (get & path("all") & withOffsetAndLimit) { (offset, limit) =>
+    complete(forumApi.allTopics(offset, limit))
   }
 
   def postMessageInTopic(topicId: Long): Route = (post & entity(as[CreateMessage]) & withToken) { (createMessage, token) =>
@@ -33,8 +31,8 @@ class ForumRoute(authApiIO: AuthApi[IO], forumApi: ForumApi[IO], implicit val lo
     complete(forumApi.updateMessage(token, messageId, updateMessage))
   }
 
-  def allTopicMessage(topicId: Long): Route = get {
-    complete(forumApi.allMessage(topicId))
+  def allTopicMessage(topicId: Long): Route = (get & withOffsetAndLimit) { (offset, limit) =>
+    complete(forumApi.allMessage(topicId, offset, limit))
   }
 
   def updateTopic(topicId: Long): Route = (post & path("update") & entity(as[UpdateTopic]) & withToken) { (input, token) =>
@@ -97,5 +95,7 @@ class ForumRoute(authApiIO: AuthApi[IO], forumApi: ForumApi[IO], implicit val lo
   }
 
   def withToken: Directive1[String] = cookie(SESSION_TOKEN).map(_.value)
+
+  def withOffsetAndLimit: Directive[(Int, Int)] = parameters("offset".as[Int] ? 0, "limit".as[Int] ? 30)
 }
 

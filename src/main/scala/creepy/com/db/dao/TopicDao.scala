@@ -46,11 +46,15 @@ class TopicDao {
       .run
       .void
 
-  def allTopics: ConnectionIO[List[Topic]] = sql"SELECT * FROM topic"
-    .query[Topic]
-    .stream
-    .compile
-    .toList
+  def allTopics(offset: Int, limit: Int): ConnectionIO[List[Topic]] =
+    sql"""SELECT * FROM topic
+         |ORDER BY create_date OFFSET $offset LIMIT $limit
+       """
+      .stripMargin
+      .query[Topic]
+      .stream
+      .compile
+      .toList
 
 }
 

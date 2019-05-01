@@ -34,18 +34,22 @@ class MessageDao {
 
   def updateMessage(messageId: Long, updatedMessage: UpdateMessage): ConnectionIO[Unit] =
     sql"""UPDATE message SET
-       body = ${updatedMessage.body}
-       WHERE id =  $messageId
+         |body = ${updatedMessage.body}
+         |WHERE id =  $messageId
        """.stripMargin
       .update
       .run
       .void
 
-  def allMessage(topicId: Long): ConnectionIO[List[Message]] = sql"SELECT * FROM message WHERE topic_id = $topicId"
-    .query[Message]
-    .stream
-    .compile
-    .toList
+  def allMessage(topicId: Long, offset: Int, limit: Int): ConnectionIO[List[Message]] =
+    sql"""SELECT * FROM message WHERE topic_id = $topicId
+         |ORDER BY create_date OFFSET $offset LIMIT $limit
+       """
+      .stripMargin
+      .query[Message]
+      .stream
+      .compile
+      .toList
 
   def messageExist(messageId: Long): ConnectionIO[Boolean] = getMessage(messageId).flatMap {
     case Right(_) => true.pure[ConnectionIO]

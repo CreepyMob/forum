@@ -23,6 +23,7 @@ create table topic (
   id serial primary key not null,
   owner_id int not null,
   title text not null,
+  create_date timestamp not null,
   description text,
   foreign key (owner_id) references users (id)
 );
@@ -33,7 +34,7 @@ create table message (
   topic_id int not null,
   forward_id int,
   body text  not null,
-  message_date timestamp not null,
+  create_date timestamp not null,
  foreign key (owner_id) references users (id),
  foreign key (topic_id) references topic (id)
 );
