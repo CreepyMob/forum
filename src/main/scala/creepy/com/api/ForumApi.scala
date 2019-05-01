@@ -34,6 +34,7 @@ class ForumApiImpl(sessionApi: SessionApi[IO],
                    topicDao: TopicDao,
                    messageDao: MessageDao,
                    dateProvider: DateProvider,
+                   guard: Guard,
                    xa: Transactor[IO],
                    logger: Logger[IO]) extends ForumApi[IO] {
 
@@ -48,19 +49,21 @@ class ForumApiImpl(sessionApi: SessionApi[IO],
     _ <- messageDao.addMessage(ownerId, topic.id, date, createTopic.initialMessage)
   } yield ()
 
+  //  def conditionOrError[F[_] : MonadError[?[_], Throwable]](condition: => Boolean, error: => IllegalStateException): F[Unit] = if (condition) {
+  //    Applicative[F].pure(Unit)
+  //  } else {
+  //    error.raiseError[F, Unit]
+  //  }
+
   override def removeTopic(initiatorToken: String, topicId: Long): IO[Unit] = for {
     userId <- sessionApi.getUserIdForToken(initiatorToken)
     _ <- removeTopicTransaction(userId, topicId).transact[IO](xa)
   } yield ()
 
   def removeTopicTransaction(initiatorId: Long, topicId: Long): ConnectionIO[Unit] = for {
-    originEitherTopic <- topicDao.getTopic(topicId)
-    originTopic <- originEitherTopic.liftTo[ConnectionIO]
-    _ <- if (originTopic.ownerId == topicId) {
-      topicDao.removeTopic(topicId)
-    } else {
-      OnlyTopicOwnerCanRemoveTopic(initiatorId, originTopic.id).raiseError[ConnectionIO, Unit]
-    }
+    originTopic <- topicDao.getTopic(topicId).rethrow
+    _ <- guard.conditionOrError[ConnectionIO](originTopic.ownerId == topicId, OnlyTopicOwnerCanRemoveTopic(initiatorId, originTopic.id))
+    _ <- topicDao.removeTopic(topicId)
   } yield ()
 
   override def updateTopic(initiatorToken: String, topicId: Long, updateTopic: UpdateTopic): IO[Unit] = for {
@@ -69,13 +72,9 @@ class ForumApiImpl(sessionApi: SessionApi[IO],
   } yield ()
 
   def updateTopicTransaction(initiatorId: Long, topicId: Long, updateTopic: UpdateTopic): ConnectionIO[Unit] = for {
-    originEitherTopic <- topicDao.getTopic(topicId)
-    originTopic <- originEitherTopic.liftTo[ConnectionIO]
-    _ <- if (originTopic.ownerId == topicId) {
-      topicDao.updateTopic(topicId, updateTopic)
-    } else {
-      OnlyTopicOwnerCanUpdateTopic(initiatorId, originTopic.id).raiseError[ConnectionIO, Unit]
-    }
+    originTopic <- topicDao.getTopic(topicId).rethrow
+    _ <- guard.conditionOrError[ConnectionIO](originTopic.ownerId == topicId, OnlyTopicOwnerCanUpdateTopic(initiatorId, originTopic.id))
+    _ <- topicDao.updateTopic(topicId, updateTopic)
   } yield ()
 
   override def allTopics(): IO[List[Topic]] = topicDao.allTopics.transact[IO](xa)
@@ -98,13 +97,9 @@ class ForumApiImpl(sessionApi: SessionApi[IO],
   } yield ()
 
   def updateMessageTransaction(initiatorId: Long, messageId: Long, updatedMessage: UpdateMessage): ConnectionIO[Unit] = for {
-    originMessageEither <- messageDao.getMessage(messageId)
-    originMessage <- originMessageEither.liftTo[ConnectionIO]
-    _ <- if (originMessage.ownerId == initiatorId) {
-      messageDao.updateMessage(messageId, updatedMessage)
-    } else {
-      OnlyMessageOwnerCanUpdateMessage(initiatorId, originMessage.id).raiseError[ConnectionIO, Unit]
-    }
+    originMessage <- messageDao.getMessage(messageId).rethrow
+    _ <- guard.conditionOrError[ConnectionIO](originMessage.ownerId == messageId, OnlyMessageOwnerCanUpdateMessage(initiatorId, originMessage.id))
+    _ <- messageDao.updateMessage(messageId, updatedMessage)
   } yield ()
 
   override def deleteMessage(initiatorToken: String, messageId: Long): IO[Unit] = for {
@@ -113,13 +108,9 @@ class ForumApiImpl(sessionApi: SessionApi[IO],
   } yield ()
 
   def deleteMessageTransaction(initiatorId: Long, messageId: Long): ConnectionIO[Unit] = for {
-    originMessageEither <- messageDao.getMessage(messageId)
-    originMessage <- originMessageEither.liftTo[ConnectionIO]
-    _ <- if (originMessage.ownerId == initiatorId) {
-      messageDao.removeMessage(messageId)
-    } else {
-      OnlyMessageOwnerCanRemoveMessage(initiatorId, originMessage.id).raiseError[ConnectionIO, Unit]
-    }
+    originMessage <- messageDao.getMessage(messageId).rethrow
+    _ <- guard.conditionOrError[ConnectionIO](originMessage.ownerId == initiatorId, OnlyMessageOwnerCanRemoveMessage(initiatorId, originMessage.id))
+    _ <- messageDao.removeMessage(messageId)
   } yield ()
 
   override def allMessage(topicId: Long): IO[List[Message]] = messageDao.allMessage(topicId).transact[IO](xa)

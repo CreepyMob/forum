@@ -6,7 +6,7 @@ import akka.http.scaladsl.server.Route
 import akka.stream.ActorMaterializer
 import cats.effect.{ExitCode, IO, IOApp}
 import cats.syntax.functor._
-import creepy.com.api._
+import creepy.com.api.{Guard, _}
 import creepy.com.db.Database
 import creepy.com.db.dao.{MessageDao, TokenDao, TopicDao, UserDao}
 import creepy.com.http.ForumRoute
@@ -39,9 +39,10 @@ object App extends IOApp {
           topicDao = new TopicDao()
           messageDao = new MessageDao()
           dateProvider = new DateProvider()
+          guard = new Guard()
           authApi = new AuthApiIO(tokenDao, userDao, tokenGenerator, dateProvider, xa)
           sessionApi = new SessionApiIO(tokenDao, userDao, xa)
-          forumApi = new ForumApiImpl(sessionApi, topicDao, messageDao, dateProvider, xa, logger)
+          forumApi = new ForumApiImpl(sessionApi, topicDao, messageDao, dateProvider, guard, xa, logger)
           forumHttp = new ForumRoute(authApi, forumApi, logger)
           _ <- runServer(forumHttp())
           _ <- IO.never

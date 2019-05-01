@@ -58,3 +58,4 @@ scalacOptions := Seq(
 )
 
 addCompilerPlugin("org.scalameta" % "paradise" % "3.0.0-M11" cross CrossVersion.patch)
+addCompilerPlugin("org.typelevel"   %% "kind-projector"     % "0.10.0")
