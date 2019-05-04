@@ -7,5 +7,5 @@ import cats.effect.Sync
 
 class DateProvider {
 
-  def apply[F[_] : Sync]: F[Timestamp] = Sync[F].delay(new Timestamp(new Date().getTime))
+  def apply[F[_] : Sync]: F[Timestamp] = Sync[F].delay(new Timestamp(System.currentTimeMillis()))
 }
